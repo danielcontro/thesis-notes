@@ -1,0 +1,74 @@
+\documentclass[12pt]{article}
+
+\usepackage{import}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage[linesnumbered,ruled]{algorithm2e}
+
+\begin{document}
+
+\section{Stochastic Parity Progress Measure synthesis algorithm}
+\begin{algorithm}
+	\SetKwInOut{Input}{Input}
+	\SetKwInOut{Output}{Output}
+	\SetKwProg{Fn}{function}{:}{end}
+
+	\Input{Stochastic process $X_n: \Omega \to V$,\\
+		priority function $p: V \to [d]$}
+	\Output{A Stochastic parity progress measure $\varrho: V \to \mathbb{R}^d_{\ge 0}$}
+
+	\Fn{SPPM($X_n, p, d$)}{
+		\For{$i \in \{0..d-1\}$}{
+			$\alpha_i\_query = true$\\
+			\For{$j \in \{i..d-1\}$}{
+				\eIf{$Even(j)$}{
+					$V_j\_constraint = FarkasLemma(\varphi_{ij})$
+				}{
+					$V_j\_constraint = FarkasLemma(\varphi_{ij}) \wedge (\bigwedge FarkasLemma(\overline{\psi_{ijk}}))$
+				}
+				$\alpha_i\_query = \alpha_i\_query \wedge V_j\_constraint$
+			}
+			$(\alpha_i, g_{ii},.., g_{id})$ = solve $\alpha_i\_query$ with SMT solver\\
+		}
+		return $(\alpha_0,..,\alpha_d)$
+	}
+	\caption{Stochastic Parity Progress Measure synthesis algorithm}
+\end{algorithm}
+
+where
+\begin{align*}
+	 & \varphi_{ij} = \forall\, \omega \in \Omega.\,
+	V_j(X_n(\omega)) \Rightarrow
+	\mathbb{E}(\alpha_i\circ X_{n+1}|\mathcal{F}_n)(\omega) \le \alpha_i\circ X_n(\omega)                                        \\
+	 & \psi_{ij} = \forall\, \omega \in \Omega.\,
+	V_j(X_n(\omega)) \wedge g_{ij}(X_n(\omega)) \Rightarrow
+	\mathbb{E}(\alpha_i\circ X_{n+1}|\mathcal{F}_n)(\omega) \le \alpha_i\circ X_n(\omega) - 1                                    \\
+	 & \overline{\psi_{ij}} =
+	\forall\, \omega \in \Omega.\, V_j(X_n(\omega)) \wedge \overline{g_{ij}(X_n(\omega))} \Rightarrow
+	\mathbb{E}(\alpha_i\circ X_{n+1}|\mathcal{F}_n)(\omega) \le \alpha_i\circ X_n(\omega)                                        \\
+	 & \qquad \equiv \bigwedge_{k=1}^l \overline{\psi_{ijk}}                                                                     \\
+	 & \overline{\psi_{ijk}} = \forall\, \omega \in \Omega.\,V_j(X_n(\omega)) \wedge \overline{g_{ijk}(X_n(\omega))} \Rightarrow
+	\mathbb{E}(\alpha_i\circ X_{n+1}|\mathcal{F}_n)(\omega) \le \alpha_i\circ X_n(\omega)
+\end{align*}
+and
+\begin{align*}
+	 & g_{ij}(v) = \bigwedge_{k=1}^l g_{ijk}(v) & \overline{g_{ij}(v)} = \bigvee_{k=1}^l \overline{g_{ijk}(v)}
+\end{align*}
+each $g_{ijk}, \overline{g_{ijk}}$ is a linear inequality on $v$.
+
+\section{Questions}
+Is it possible to bound the dimensionality of the SPPM before $d$ and "stop early"?\\
+Is the number of $\overline{g_{ijk}}$ bounded?
+
+\newpage
+
+\section{Alternatives(?)}
+alternative with odd $i$(?)
+\[
+	\psi_{ij} = \forall\, \omega \in \Omega.\,V_j(X_n(\omega)) \Rightarrow \mathbb{E}(\alpha_i\circ X_{n+1}|\mathcal{F}_n)(\omega) \le \alpha_i\circ X_n(\omega) - \mathbf{1}_{g_{ij}}\circ X_n(\omega)
+\]
+\end{document}
